@@ -1,20 +1,25 @@
 #!/usr/bin/perl
 #  contras.pm
-
+use warnings;
+use strict;
+## These are being accessed globally
+## A better solution would be to pass them as part of an Object
+use vars qw(@solution $search_step_cnt);
 # Random Contra Dance Generator
 # Copyright (c) 1998, 1999 Robert E. Frederking
 # Permission is granted to copy and distribute for non-commercial use only
 
 # *** Update this with each "release" on the Web:
 # First Release Begun: 30-Dec-98
-$version = "0.1";
+our $version = "0.2";
 
 # Starts with a database of moves, and produces working contra dances
 # (though not necessarily artistically pleasant ones).
 
 # Have a safety valve: search is not allowed to run more than $N times (10,000??)
 
-$search_step_limit = 10000;
+my $search_step_limit = 10000;
+my $search_step_flag = "";
 
 ###########################################################################################
 # Start with a database of moves:
@@ -29,7 +34,7 @@ $search_step_limit = 10000;
 # 27-Dec-98: Added weight to move selection: bigger means tried later in random sequence on average
 #	Currently, 1=very common, 2=not unusual, 10=as unusual as possible
 #<<< Tells PerlTidy to skip this section
-@possible_moves = (
+my @possible_moves = (
   [[\&couples_on_side], \&status_quo, 16, "Hey for Four", "Hey", 2],
 # This pretends we stay in normal improper contra position:
   [[\&couples_on_side], \&status_quo, 16, "Down the Hall in Lines of Four and<BR> 
@@ -37,7 +42,7 @@ $search_step_limit = 10000;
   [[\&men_across_set], \&exchange_men_across_set, 4, "Men pass Left across set", "Men_cross", 10],
   [[\&with_P_on_side], \&change_sides_to_facing_in, 8, "Swing your Partner", "Swing_P/in", 1],    # end facing in?
   [[\&with_P_on_side], \&change_sides_to_facing_in, 12, "Swing your Partner (12 counts)", "Swing_P/in/12", 2],    # end facing in?
-  [[\&with_P_on_side], \&change_sides_to_facing_in, 16, "Balance and Swing Partner", "B+S_N/in", 1],    # end facing in?
+  [[\&with_P_on_side], \&change_sides_to_facing_in, 16, "Balance and Swing Partner", "B+S_P/in", 1],    # end facing in?
   [[], \&rotate_R_1_place, 8, "Circle Left three places", "Circle_L_3", 1],
   [[], \&status_quo, 4, "Balance the circle", "Bal_circle", 5],
   [[\&with_P], \&exchange_Ps, 4, "Box the Gnat with your Partner", "Box_Gnat_P", 10],
@@ -45,8 +50,8 @@ $search_step_limit = 10000;
   [[\&with_P], \&exchange_Ps, 8, "Balance and Box the Gnat with your Partner", "B+Box_Gnat_P", 10],
   [[\&with_N], \&exchange_Ns, 8, "Balance and Box the Gnat with your Neighbor", "B+Box_Gnat_N", 10],
   [[\&with_P_at_heads],\&switch_places_at_heads, 4, "California Twirl Partner", "CA_twirl", 5],
-  [[\&with_N_on_side], \&change_sides_to_facing_in, 8, "Swing your Neighbor", "Swing_P/in", 1],    # end facing in?
-  [[\&with_N_on_side], \&change_sides_to_facing_in, 12, "Swing your Neighbor (12 counts)", "Swing_P/in/12", 2],    # end facing in?
+  [[\&with_N_on_side], \&change_sides_to_facing_in, 8, "Swing your Neighbor", "Swing_N/in", 1],    # end facing in?
+  [[\&with_N_on_side], \&change_sides_to_facing_in, 12, "Swing your Neighbor (12 counts)", "Swing_N/in/12", 2],    # end facing in?
   [[\&with_N_on_side], \&change_sides_to_facing_in, 16, "Balance and Swing Neighbor", "B+S_N/in", 1],    # end facing in?
   [[\&with_P], \&status_quo, 8, "Do-si-do your Partner", "Dosido_P", 5],
   [[\&with_N], \&status_quo, 8, "Do-si-do your Neighbor", "Dosido_N", 5],
@@ -55,11 +60,11 @@ $search_step_limit = 10000;
 );
 #>>>
 # This gets us the size of the move array:
-$number_of_moves = @possible_moves;
+my $number_of_moves = @possible_moves;
 
 # Compute total "P" mass across all possible moves:
-$total_P_sum = 0;
-for ($i = 0 ; $i < $number_of_moves ; $i++) {
+my $total_P_sum = 0;
+for (my $i = 0 ; $i < $number_of_moves ; $i++) {
   $total_P_sum += $possible_moves[$i][5];
 }
 
@@ -71,19 +76,19 @@ sub print_out_moves {
   # *** Would be prettier if a "(" prevented the step count from printing:
   print $handle
     "There are $number_of_moves contra dance moves defined in version $version:<P>\n\n";
-  foreach $move (@possible_moves) {
+  foreach my $move (@possible_moves) {
     print $handle "${$move}[3] (${$move}[2] steps)<BR>\n";
   }
 }
 
-$max_dance_len = 64;
+my $max_dance_len = 64;
 
 # Have an indicator of type of dance (improper, Becket, proper, etc.)
 # This selects the initial floorplan
-$floorplan_type    = improper;
-@initial_floorplan = (
-  [{gender => lady, direction => 1}, {gender => gent, direction => 1}],
-  [{gender => gent, direction => 2}, {gender => lady, direction => 2}]
+my $floorplan_type    = "improper";
+my @initial_floorplan = (
+  [{gender => "lady", direction => 1}, {gender => "gent", direction => 1}],
+  [{gender => "gent", direction => 2}, {gender => "lady", direction => 2}]
 );
 
 # This tests the predicates:
@@ -93,10 +98,10 @@ $floorplan_type    = improper;
 # Puts a blank line between As/Bs, and labels them
 sub print_dance {
   my ($handle, @dance) = @_;
-  my $move_cntr;
+  my $move_cntr = 0;
 
   print $handle "<DL COMPACT><DT><B>A1:</B>";
-  foreach $i (@dance) {
+  foreach my $i (@dance) {
     if ($move_cntr == 16)     {print $handle "\n<BR><DT><B>A2:</B> "}
     if ($move_cntr == 32)     {print $handle "\n<BR><DT><B>B1:</B> "}
     if ($move_cntr == 48)     {print $handle "\n<BR><DT><B>B2:</B> "}
@@ -113,13 +118,13 @@ sub print_dance {
 # dance_moves is the sequence of instantiated possible moves
 # 	that will produce the floorplan shown.
 # When a solution is found, set @solution to abort further searching
-@initial_state = ([], \@initial_floorplan, 0);
+my @initial_state = ([], \@initial_floorplan, 0);
 
 sub print_floorplan {
   my ($handle, @floorplan) = @_;
 
 ## print $handle "Rows: ", @floorplan, "\n";
-  foreach $i (0, 1) {
+  foreach my $i (0, 1) {
     print $handle $floorplan[$i][0]{gender}, " ", $floorplan[$i][0]{direction},
       "    ";
     print $handle $floorplan[$i][1]{gender}, " ", $floorplan[$i][1]{direction},
@@ -129,11 +134,11 @@ sub print_floorplan {
 
 sub print_dance_w_floorplans {
   my ($handle, @dance) = @_;
-  my $move_cntr;
+  my $move_cntr = 0;
   my @floorplan = @initial_floorplan;
 
   print $handle "A1: ";
-  foreach $i (@dance) {
+  foreach my $i (@dance) {
     if ($move_cntr == 16)     {print $handle "\nA2: "}
     if ($move_cntr == 32)     {print $handle "\nB1: "}
     if ($move_cntr == 48)     {print $handle "\nB2: "}
@@ -142,7 +147,7 @@ sub print_dance_w_floorplans {
     print $handle $possible_moves[$i][3], "\n";
 
     @floorplan = &{$possible_moves[$i][1]}(@floorplan);
-    &print_floorplan($handle, @floorplan);
+    print_floorplan($handle, @floorplan);
 
     $move_cntr = $move_cntr + $possible_moves[$i][2];
   }
@@ -155,13 +160,14 @@ sub print_dance_w_floorplans {
 
 sub main_contra_generator {
   my $handle = pop @_;
+  my ($seed);
 
   open(TRACE, ">contra_trace.log");
 
   $search_step_cnt = 0;
 
   # This prints initial floorplan
-  &print_floorplan(TRACE, @initial_floorplan);
+  print_floorplan(*TRACE, @initial_floorplan);
   print TRACE "\n";
 
 # set seed from time or from user input, print seed out with answer as dance number
@@ -180,12 +186,12 @@ sub main_contra_generator {
 
   # This shows that original dance (Piece o' Cake) is done correctly:
   # (using possibly obsolete move numbers, and no prec checking!)
-  # &print_dance_w_floorplans(TRACE, (7,0,1,3,4,5,6)); print TRACE "\n";
+  # print_dance_w_floorplans(*TRACE, (7,0,1,3,4,5,6)); print TRACE "\n";
 
   # This is here in case things really die later:
   print TRACE "Dance number ", $seed - 910200000, " (version $version)\n";
 
-  &random_dfs(@initial_state);
+  random_dfs(@initial_state);
 
   if ($search_step_flag eq "TOODEEP") {
     print TRACE "Dance search exceeded limit, ", $search_step_limit,
@@ -193,14 +199,14 @@ sub main_contra_generator {
     print $handle "Dance search exceeded limit, ", $search_step_limit,
       " search steps!\n<BR>\n";
   } else {
-    &print_dance_w_floorplans(TRACE, @{$solution[0]});
+    print_dance_w_floorplans(*TRACE, @{$solution[0]});
     print TRACE "\n";
-    &print_floorplan(TRACE, @{$solution[1]});
+    print_floorplan(*TRACE, @{$solution[1]});
     print TRACE "\n";
     print TRACE "steps: ", $solution[2];
     print TRACE "\n\n";
 
-    &print_dance($handle, @{$solution[0]});
+    print_dance($handle, @{$solution[0]});
     print $handle "\n<BR>";
   }
 
@@ -213,6 +219,7 @@ sub main_contra_generator {
 ## This debugging stub replaces random_permute with number from list
 ## Need to also tell it to fail at some point?  Not so far.
 sub fake_random_permute {
+  my @test = ([4],[3,4]);
   return @{$test[$search_step_cnt - 1]};
 }
 
@@ -229,7 +236,7 @@ sub random_dfs {
   }
   print TRACE "\nSearch step count: $search_step_cnt \n";
 
-  if (&solution_p(@search_state)) {
+  if (solution_p(@search_state)) {
     @solution = @search_state;
     return @solution;
   }
@@ -237,12 +244,12 @@ sub random_dfs {
     return 0;
   }
 
-  @children_order = &random_permute($number_of_moves);
+  @children_order = random_permute($number_of_moves);
 
-  foreach $child_move (@children_order) {
-    if (&applicable_to_state($child_move, @search_state)) {
-      @temp = &apply($child_move, @search_state);
-      &random_dfs(@temp);
+  foreach my $child_move (@children_order) {
+    if (applicable_to_state($child_move, @search_state)) {
+      @temp = apply($child_move, @search_state);
+      random_dfs(@temp);
     }
     if (@solution) {return @solution;}
     elsif ($search_step_flag eq "TOODEEP") {return 0}
@@ -255,11 +262,11 @@ sub solution_p {
   my @search_state = @_;
 
   if ($search_state[2] == 64) {
-    foreach $i (0 .. 1) {
+    foreach my $i (0 .. 1) {
       if ( (${$search_state[1]}[0][$i]{direction} != 2)
         or (${$search_state[1]}[1][$i]{direction} != 1)
-        or (${$search_state[1]}[$i][$i]{gender} ne gent)
-        or (${$search_state[1]}[1 - $i][$i]{gender} ne lady))
+        or (${$search_state[1]}[$i][$i]{gender} ne "gent")
+        or (${$search_state[1]}[1 - $i][$i]{gender} ne "lady"))
       {
         return 0;
       }
@@ -282,11 +289,11 @@ sub applicable_to_state {
   # We may want to relax this condition later:
   # *** Index via move: some moves can't repeat immediately,
   #                     some can't occur twice in one dance, etc.
-  foreach $old_move (@previous_moves) {
+  foreach my$old_move (@previous_moves) {
     if ($old_move == $move_number) {return 0}
   }
 
-  foreach $prec (@{$possible_moves[$move_number][0]}) {
+  foreach my$prec (@{$possible_moves[$move_number][0]}) {
 
     # print TRACE "for $prec : ", &{$prec}(@{$search_state[1]}), "\n";
     if (!&{$prec}(@{$search_state[1]})) {return 0;}
@@ -314,12 +321,12 @@ sub apply {
 
   print TRACE " " x $search_state[2];
   print TRACE
-    "applying move $move_number $possible_moves[$move_number][4] to state @search_state\n";
-
+    "applying move $move_number $possible_moves[$move_number][4] to state @{$search_state[0]} ";
+  print_floorplan(*TRACE, @{$search_state[1]});
 ## print TRACE "Before action floorplancopy: ", \@floorplancopy, "\n";
-## &print_floorplan(TRACE, @floorplancopy);
+## print_floorplan(TRACE, @floorplancopy);
 ## print TRACE "Before action search_state: ", \@{$search_state[1]}, "\n";
-## &print_floorplan(TRACE, @{$search_state[1]});
+## print_floorplan(TRACE, @{$search_state[1]});
 ## print TRACE "\n";
 
   # Need to copy the array (or something) due to destructive ops!!!
@@ -343,14 +350,14 @@ sub apply {
 # Since first move chosen is last tried, large P of being chosen == low priority!!
 sub random_permute {
   my $n = pop @_;
-  my $X;
-  ($tsum, $psum) = ($total_P_sum, 0);
+  my (@permutation, @indices, @temp, $choice, $X);
+  my ($tsum, $psum) = ($total_P_sum, 0);
 
-  for ($i = $n - 1 ; $i >= 0 ; $i--) {
+  for (my $i = $n - 1 ; $i >= 0 ; $i--) {
     @indices[$i] = $i;
   }
 
-  for ($i = $n - 1 ; $i >= 0 ; $i--) {
+  for (my $i = $n - 1 ; $i >= 0 ; $i--) {
 
     #print TRACE "tsum is $tsum \n";
     $X    = rand;
@@ -358,7 +365,7 @@ sub random_permute {
 
     #print TRACE "i is $i  and  X is $X \n";
   CHOOSE:
-    for ($j = 0 ; $j <= $i ; $j++) {
+    for (my $j = 0 ; $j <= $i ; $j++) {
 
       # Calculate $psum in same loop as $X comparison:
       $psum += $possible_moves[$indices[$j]][5] / $tsum;
@@ -385,12 +392,13 @@ sub random_permute {
 # (OBSOLETE: replaced by above)
 sub random_permute_0 {
   my $n = pop @_;
+  my (@permutation, @indices, @temp, $choice);
 
-  for ($i = $n - 1 ; $i >= 0 ; $i--) {
+  for (my $i = $n - 1 ; $i >= 0 ; $i--) {
     @indices[$i] = $i;
   }
 
-  for ($i = $n - 1 ; $i >= 0 ; $i--) {
+  for (my $i = $n - 1 ; $i >= 0 ; $i--) {
     $choice          = int(($i + 1) * rand);
     @temp            = splice(@indices, $choice, 1);
     $permutation[$i] = $temp[0];
@@ -405,10 +413,10 @@ sub random_permute_0 {
 sub couples_on_side {
   my @floorplan = @_;
 
-        ($floorplan[1][1]{gender} eq gent)
-    and ($floorplan[0][1]{gender} eq lady)
-    and ($floorplan[1][0]{gender} eq lady)
-    and ($floorplan[0][0]{gender} eq gent)
+        ($floorplan[1][1]{gender} eq "gent")
+    and ($floorplan[0][1]{gender} eq "lady")
+    and ($floorplan[1][0]{gender} eq "lady")
+    and ($floorplan[0][0]{gender} eq "gent")
 
 }
 
@@ -495,8 +503,8 @@ sub change_sides_to_facing_in {
   my @floorplan = @_;
   my @newfloorplan;
 
-  foreach $i (0 .. 1) {
-    if ($floorplan[$i][$i]{gender} eq lady) {
+  foreach my $i (0 .. 1) {
+    if ($floorplan[$i][$i]{gender} eq "lady") {
       $newfloorplan[0][$i] = $floorplan[1][$i];
       $newfloorplan[1][$i] = $floorplan[0][$i];
     } else {
@@ -528,13 +536,13 @@ sub exchange_men_across_set {
   my ($man0row, $man1row);
 
   # Find man in column 0
-  foreach $i (0 .. 1) {
-    if ($floorplan[$i][0]{gender} eq gent) {$man0row = $i}
+  foreach my $i (0 .. 1) {
+    if ($floorplan[$i][0]{gender} eq "gent") {$man0row = $i}
   }
 
   # Find man in column 1
-  foreach $i (0 .. 1) {
-    if ($floorplan[$i][1]{gender} eq gent) {$man1row = $i}
+  foreach my $i (0 .. 1) {
+    if ($floorplan[$i][1]{gender} eq "gent") {$man1row = $i}
   }
 
   # Swap men
@@ -557,14 +565,14 @@ sub exchange_Ps {
   if ($floorplan[0][0]{direction} == $floorplan[0][1]{direction}) {
 
     # swap heads
-    foreach $i (0 .. 1) {
+    foreach my $i (0 .. 1) {
       $newfloorplan[$i][1] = $floorplan[$i][0];
       $newfloorplan[$i][0] = $floorplan[$i][1];
     }
   } else {
 
     # swap sides
-    foreach $i (0 .. 1) {
+    foreach my $i (0 .. 1) {
       $newfloorplan[0][$i] = $floorplan[1][$i];
       $newfloorplan[1][$i] = $floorplan[0][$i];
     }
@@ -581,14 +589,14 @@ sub exchange_Ns {
   if ($floorplan[0][0]{direction} != $floorplan[0][1]{direction}) {
 
     # swap heads
-    foreach $i (0 .. 1) {
+    foreach my $i (0 .. 1) {
       $newfloorplan[$i][1] = $floorplan[$i][0];
       $newfloorplan[$i][0] = $floorplan[$i][1];
     }
   } else {
 
     # swap sides
-    foreach $i (0 .. 1) {
+    foreach my $i (0 .. 1) {
       $newfloorplan[0][$i] = $floorplan[1][$i];
       $newfloorplan[1][$i] = $floorplan[0][$i];
     }
@@ -602,7 +610,7 @@ sub switch_places_at_heads {
   my @floorplan = @_;
   my @newfloorplan;
 
-  foreach $i (0 .. 1) {
+  foreach my $i (0 .. 1) {
     $newfloorplan[$i][1] = $floorplan[$i][0];
     $newfloorplan[$i][0] = $floorplan[$i][1];
   }

@@ -272,6 +272,21 @@ sub random_dfs {
 
 }
 
+# Test_for_valid_dance
+sub dance_valid {
+  my (@solution) = @_;
+  my @search_state = @initial_state;
+  foreach my $move (@solution) {
+    if (applicable_to_state($move, @search_state)) {
+      @search_state = apply($move, @search_state);
+    }
+  }
+  if (solution_p(@search_state)) {
+    return 1;
+  } else {return 0;}
+
+}
+
 # This will be a test for 64 steps and correct progression:
 sub solution_p {
   my @search_state = @_;

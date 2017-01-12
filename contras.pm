@@ -7,7 +7,23 @@ use strict;
 use vars qw(@solution $search_step_cnt);
 # Random Contra Dance Generator
 # Copyright (c) 1998, 1999 Robert E. Frederking
+# Copyright (c) 2017 William C. Fay
 # Permission is granted to copy and distribute for non-commercial use only
+##  This file is part of Contra Dance Generator.
+
+##  Contra Dance Generator is free software: you can redistribute it
+##  and/or modify it under the terms of the GNU General Public License
+##  as published by the Free Software Foundation, either version 3 of
+##  the License, or (at your option) any later version.
+
+##  Contra Dance Generator is distributed in the hope that it will
+##  be useful, but WITHOUT ANY WARRANTY; without even the implied
+##  warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+##  See the GNU General Public License for more details.
+
+##  You should have received a copy of the GNU General Public License
+##  along with Contra Dance Generator.
+##  If not, see <http://www.gnu.org/licenses/>.
 
 # *** Update this with each "release" on the Web:
 # First Release Begun: 30-Dec-98
@@ -159,10 +175,9 @@ sub print_dance_w_floorplans {
 # Main program
 
 sub main_contra_generator {
-  my $handle = pop @_;
-  my ($seed);
+  my ($handle, $seed) = @_;
 
-  open(TRACE, ">contra_trace.log");
+  open(TRACE, q{>}, "contra_trace.log");
 
   $search_step_cnt = 0;
 
@@ -176,7 +191,7 @@ sub main_contra_generator {
   # Disable input for the Web for the moment:
   #     print $handle "Dance number? [random] ";
   #     if (($input = <>) eq "\n")
-  {$seed = time};
+  #{$seed = time};
 
   #     else
   #     {$seed = $input+910200000};

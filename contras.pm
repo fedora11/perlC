@@ -1,10 +1,11 @@
 #!/usr/bin/perl
 #  contras.pm
+package main;
 use warnings;
 use strict;
 ## These are being accessed globally
 ## A better solution would be to pass them as part of an Object
-use vars qw(@solution $search_step_cnt);
+use vars qw($debug $OFFSET @solution $search_step_cnt);
 # Random Contra Dance Generator
 # Copyright (c) 1998, 1999 Robert E. Frederking
 # Copyright (c) 2017 William C. Fay
@@ -177,13 +178,13 @@ sub print_dance_w_floorplans {
 sub main_contra_generator {
   my ($handle, $seed) = @_;
 
-  open(TRACE, q{>}, "contra_trace.log");
+#  open(TRACE, q{>}, "contra_trace.log");
 
   $search_step_cnt = 0;
 
   # This prints initial floorplan
-  print_floorplan(*TRACE, @initial_floorplan);
-  print TRACE "\n";
+  print_floorplan(*TRACE, @initial_floorplan) if $debug;
+  print TRACE "\n" if $debug;
 
 # set seed from time or from user input, print seed out with answer as dance number
 # subtract/add 910200000 from/to time
@@ -194,39 +195,39 @@ sub main_contra_generator {
   #{$seed = time};
 
   #     else
-  #     {$seed = $input+910200000};
+  #     {$seed = $input+$OFFSET};
   srand($seed);
 
   #     print $handle "\n";
 
   # This shows that original dance (Piece o' Cake) is done correctly:
   # (using possibly obsolete move numbers, and no prec checking!)
-  # print_dance_w_floorplans(*TRACE, (7,0,1,3,4,5,6)); print TRACE "\n";
+  # print_dance_w_floorplans(*DATA, (7,0,1,3,4,5,6)); print DATA "\n";
 
   # This is here in case things really die later:
-  print TRACE "Dance number ", $seed - 910200000, " (version $version)\n";
+  print TRACE "Dance number ", $seed - $OFFSET, " (version $version)\n" if $debug;
 
   random_dfs(@initial_state);
 
   if ($search_step_flag eq "TOODEEP") {
     print TRACE "Dance search exceeded limit, ", $search_step_limit,
-      " search steps!\n\n";
+      " search steps!\n\n" if $debug;
     print $handle "Dance search exceeded limit, ", $search_step_limit,
       " search steps!\n<BR>\n";
   } else {
-    print_dance_w_floorplans(*TRACE, @{$solution[0]});
-    print TRACE "\n";
-    print_floorplan(*TRACE, @{$solution[1]});
-    print TRACE "\n";
-    print TRACE "steps: ", $solution[2];
-    print TRACE "\n\n";
+    print_dance_w_floorplans(*TRACE, @{$solution[0]}) if $debug;
+    print TRACE "\n" if $debug;
+    print_floorplan(*TRACE, @{$solution[1]}) if $debug;
+    print TRACE "\n" if $debug;
+    print TRACE "steps: ", $solution[2] if $debug;
+    print TRACE "\n\n" if $debug;
 
     print_dance($handle, @{$solution[0]});
     print $handle "\n<BR>";
   }
 
-  print TRACE "Dance number ", $seed - 910200000, " (version $version)\n";
-  print $handle "<P><I>Dance number ", $seed - 910200000,
+  print TRACE "Dance number ", $seed - $OFFSET, " (version $version)\n" if $debug;
+  print $handle "<P><I>Dance number ", $seed - $OFFSET,
     " (version $version)</I>\n";
 }
 
@@ -249,7 +250,7 @@ sub random_dfs {
     $search_step_flag = "TOODEEP";
     return 0;
   }
-  print TRACE "\nSearch step count: $search_step_cnt \n";
+  print TRACE "\nSearch step count: $search_step_cnt \n" if $debug;
 
   if (solution_p(@search_state)) {
     @solution = @search_state;
@@ -325,13 +326,13 @@ sub applicable_to_state {
 
   foreach my$prec (@{$possible_moves[$move_number][0]}) {
 
-    # print TRACE "for $prec : ", &{$prec}(@{$search_state[1]}), "\n";
+    # print TRACE "for $prec : ", &{$prec}(@{$search_state[1]}), "\n" if $debug;
     if (!&{$prec}(@{$search_state[1]})) {return 0;}
   }
 
-  print TRACE "Start cnt: $search_state[2]  End cnt: ";
-  print TRACE ($search_state[2] + $possible_moves[$move_number][2]);
-  print TRACE " Boundary: ", (16 * (1 + int($search_state[2] / 16))), "\n";
+  print TRACE "Start cnt: $search_state[2]  End cnt: " if $debug;
+  print TRACE ($search_state[2] + $possible_moves[$move_number][2]) if $debug;
+  print TRACE " Boundary: ", (16 * (1 + int($search_state[2] / 16))), "\n" if $debug;
 
   # This tests for crossing A/B boundary (and max size, as a side effect!)
   if (($search_state[2] + $possible_moves[$move_number][2]) <=
@@ -349,15 +350,15 @@ sub apply {
   my (@dancecopy, @newfloorplan);
 ## 	my @floorplancopy;
 
-  print TRACE " " x $search_state[2];
+  print TRACE " " x $search_state[2] if $debug;
   print TRACE
-    "applying move $move_number $possible_moves[$move_number][4] to state @{$search_state[0]} ";
-  print_floorplan(*TRACE, @{$search_state[1]});
-## print TRACE "Before action floorplancopy: ", \@floorplancopy, "\n";
-## print_floorplan(TRACE, @floorplancopy);
-## print TRACE "Before action search_state: ", \@{$search_state[1]}, "\n";
-## print_floorplan(TRACE, @{$search_state[1]});
-## print TRACE "\n";
+    "applying move $move_number $possible_moves[$move_number][4] to state @{$search_state[0]} " if $debug;
+  print_floorplan(*TRACE, @{$search_state[1]}) if $debug;
+## print TRACE "Before action floorplancopy: ", \@floorplancopy, "\n" if $debug;
+## print_floorplan(TRACE, @floorplancopy) if $debug;
+## print TRACE "Before action search_state: ", \@{$search_state[1]}, "\n" if $debug;
+## print_floorplan(TRACE, @{$search_state[1]}) if $debug;
+## print TRACE "\n" if $debug;
 
   # Need to copy the array (or something) due to destructive ops!!!
   @dancecopy = @{$search_state[0]};
@@ -384,27 +385,28 @@ sub random_permute {
   my ($tsum, $psum) = ($total_P_sum, 0);
 
   for (my $i = $n - 1 ; $i >= 0 ; $i--) {
-    @indices[$i] = $i;
+##    @indices[$i] = $i;
+    $indices[$i] = $i;
   }
 
   for (my $i = $n - 1 ; $i >= 0 ; $i--) {
 
-    #print TRACE "tsum is $tsum \n";
+    #print TRACE "tsum is $tsum \n" if $debug;
     $X    = rand;
     $psum = 0;
 
-    #print TRACE "i is $i  and  X is $X \n";
+    #print TRACE "i is $i  and  X is $X \n" if $debug;
   CHOOSE:
     for (my $j = 0 ; $j <= $i ; $j++) {
 
       # Calculate $psum in same loop as $X comparison:
       $psum += $possible_moves[$indices[$j]][5] / $tsum;
 
-      #print TRACE "j is $j  and  psum is $psum \n";
+      #print TRACE "j is $j  and  psum is $psum \n" if $debug;
       if ($X < $psum) {$choice = $j; last CHOOSE}
     }
 
-    #print TRACE "choice is $choice \n";
+    #print TRACE "choice is $choice \n" if $debug;
 
     @temp = splice(@indices, $choice, 1);
     $permutation[$i] = $temp[0];
@@ -425,7 +427,8 @@ sub random_permute_0 {
   my (@permutation, @indices, @temp, $choice);
 
   for (my $i = $n - 1 ; $i >= 0 ; $i--) {
-    @indices[$i] = $i;
+##    @indices[$i] = $i;
+    $indices[$i] = $i;
   }
 
   for (my $i = $n - 1 ; $i >= 0 ; $i--) {

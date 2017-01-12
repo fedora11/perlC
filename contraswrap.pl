@@ -43,10 +43,7 @@ if ($list) {
   if (dance_valid(@dance)) {
 ## When passing a Global to a file handle use *DATA or \*DATA
 ## http://stackoverflow.com/questions/16060919/alias-file-handle-to-stdout-in-perl
-##    print_dance_w_floorplans(*DATA, @dance);
     print_dance(*DATA, @dance);
-##    print DATA "<P><I>Dance number ", $seed - $OFFSET,
-##      " (version $version)</I>\n";
   } else {
     print "Dance Invalid. Possibly you have the wrong version of Possible Moves.\n";
   }
@@ -54,7 +51,6 @@ if ($list) {
   $seed = $generate + $OFFSET;
   main_contra_generator(*DATA, $seed);
 } else {
-##  $generate = $seed - $OFFSET;
   main_contra_generator(*DATA, $seed);
 }
 

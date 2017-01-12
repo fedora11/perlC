@@ -178,27 +178,13 @@ sub print_dance_w_floorplans {
 sub main_contra_generator {
   my ($handle, $seed) = @_;
 
-#  open(TRACE, q{>}, "contra_trace.log");
-
   $search_step_cnt = 0;
 
   # This prints initial floorplan
   print_floorplan(*TRACE, @initial_floorplan) if $debug;
   print TRACE "\n" if $debug;
 
-# set seed from time or from user input, print seed out with answer as dance number
-# subtract/add 910200000 from/to time
-
-  # Disable input for the Web for the moment:
-  #     print $handle "Dance number? [random] ";
-  #     if (($input = <>) eq "\n")
-  #{$seed = time};
-
-  #     else
-  #     {$seed = $input+$OFFSET};
   srand($seed);
-
-  #     print $handle "\n";
 
   # This shows that original dance (Piece o' Cake) is done correctly:
   # (using possibly obsolete move numbers, and no prec checking!)
@@ -348,9 +334,8 @@ sub applicable_to_state {
 sub apply {
   my ($move_number, @search_state) = @_;
   my (@dancecopy, @newfloorplan);
-## 	my @floorplancopy;
 
-  print TRACE " " x $search_state[2] if $debug;
+  print TRACE " " x ($search_state[2] / 4) if $debug;
   print TRACE
     "applying move $move_number $possible_moves[$move_number][4] to state @{$search_state[0]} " if $debug;
   print_floorplan(*TRACE, @{$search_state[1]}) if $debug;
@@ -360,7 +345,7 @@ sub apply {
 ## print_floorplan(TRACE, @{$search_state[1]}) if $debug;
 ## print TRACE "\n" if $debug;
 
-  # Need to copy the array (or something) due to destructive ops!!!
+## Need to copy the array (or something) due to destructive ops!!!
   @dancecopy = @{$search_state[0]};
 
 ## 	$floorplancopy[0][0] = ${$search_state[1]}[0][0];
@@ -385,17 +370,16 @@ sub random_permute {
   my ($tsum, $psum) = ($total_P_sum, 0);
 
   for (my $i = $n - 1 ; $i >= 0 ; $i--) {
-##    @indices[$i] = $i;
     $indices[$i] = $i;
   }
 
   for (my $i = $n - 1 ; $i >= 0 ; $i--) {
 
-    #print TRACE "tsum is $tsum \n" if $debug;
+##  print TRACE "tsum is $tsum \n" if $debug;
     $X    = rand;
     $psum = 0;
 
-    #print TRACE "i is $i  and  X is $X \n" if $debug;
+##  print TRACE "i is $i  and  X is $X \n" if $debug;
   CHOOSE:
     for (my $j = 0 ; $j <= $i ; $j++) {
 
@@ -406,12 +390,12 @@ sub random_permute {
       if ($X < $psum) {$choice = $j; last CHOOSE}
     }
 
-    #print TRACE "choice is $choice \n" if $debug;
+##  print TRACE "choice is $choice \n" if $debug;
 
     @temp = splice(@indices, $choice, 1);
     $permutation[$i] = $temp[0];
 
-    # update $tsum: remove P mass of the move just chosen:
+##  update $tsum: remove P mass of the move just chosen:
     $tsum -= $possible_moves[$permutation[$i]][5];
   }
   return @permutation;

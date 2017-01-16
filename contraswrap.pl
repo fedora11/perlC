@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 #  contraswrap.pl
 #
+#use contras01;
 use contras;
 use warnings;
 use strict;
@@ -8,7 +9,8 @@ use Getopt::Long qw(GetOptions);
 use Data::Dumper qw(Dumper);
 
 our $debug;
-our $OFFSET = 910200000;
+#our $OFFSET = 910200000;
+our $OFFSET = 915200000;
 my $version = 0;
 # This value prevents false error if --debug is not set
 my $tr_log_opn = 1;

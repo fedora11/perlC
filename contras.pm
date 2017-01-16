@@ -66,7 +66,7 @@ my @possible_moves = (
   [[\&with_N], \&exchange_Ns, 4, "Box the Gnat with your Neighbor", "Box_Gnat_N", 10],
   [[\&with_P], \&exchange_Ps, 8, "Balance and Box the Gnat with your Partner", "B+Box_Gnat_P", 10],
   [[\&with_N], \&exchange_Ns, 8, "Balance and Box the Gnat with your Neighbor", "B+Box_Gnat_N", 10],
-  [[\&with_P_at_heads],\&switch_places_at_heads, 4, "California Twirl Partner", "CA_twirl", 5],
+  [[\&with_P_at_heads], \&switch_places_at_heads, 4, "California Twirl Partner", "CA_twirl", 5],
   [[\&with_N_on_side], \&change_sides_to_facing_in, 8, "Swing your Neighbor", "Swing_N/in", 1],    # end facing in?
   [[\&with_N_on_side], \&change_sides_to_facing_in, 12, "Swing your Neighbor (12 counts)", "Swing_N/in/12", 2],    # end facing in?
   [[\&with_N_on_side], \&change_sides_to_facing_in, 16, "Balance and Swing Neighbor", "B+S_N/in", 1],    # end facing in?
@@ -104,8 +104,8 @@ my $max_dance_len = 64;
 # This selects the initial floorplan
 my $floorplan_type    = "improper";
 my @initial_floorplan = (
-  [{gender => "lady", direction => 1}, {gender => "gent", direction => 1}],
-  [{gender => "gent", direction => 2}, {gender => "lady", direction => 2}]
+  [{gender => "W", direction => 1}, {gender => "M", direction => 1}],
+  [{gender => "M", direction => 2}, {gender => "W", direction => 2}]
 );
 
 # This tests the predicates:
@@ -142,9 +142,9 @@ sub print_floorplan {
 
 ## print $handle "Rows: ", @floorplan, "\n";
   foreach my $i (0, 1) {
-    print $handle $floorplan[$i][0]{gender}, " ", $floorplan[$i][0]{direction},
-      "    ";
-    print $handle $floorplan[$i][1]{gender}, " ", $floorplan[$i][1]{direction},
+    print $handle $floorplan[$i][0]{gender}, $floorplan[$i][0]{direction},
+      " ";
+    print $handle $floorplan[$i][1]{gender}, $floorplan[$i][1]{direction},
       "\n";
   }
 }
@@ -153,6 +153,10 @@ sub print_dance_w_floorplans {
   my ($handle, @dance) = @_;
   my $move_cntr = 0;
   my @floorplan = @initial_floorplan;
+
+## This prints initial floorplan
+  print_floorplan(*TRACE, @initial_floorplan) if $debug;
+  print TRACE "\n" if $debug;
 
   print $handle "A1: ";
   foreach my $i (@dance) {
@@ -180,9 +184,9 @@ sub main_contra_generator {
 
   $search_step_cnt = 0;
 
-  # This prints initial floorplan
-  print_floorplan(*TRACE, @initial_floorplan) if $debug;
-  print TRACE "\n" if $debug;
+## This prints initial floorplan
+##  print_floorplan(*TRACE, @initial_floorplan) if $debug;
+##  print TRACE "\n" if $debug;
 
   srand($seed);
 
@@ -203,8 +207,8 @@ sub main_contra_generator {
   } else {
     print_dance_w_floorplans(*TRACE, @{$solution[0]}) if $debug;
     print TRACE "\n" if $debug;
-    print_floorplan(*TRACE, @{$solution[1]}) if $debug;
-    print TRACE "\n" if $debug;
+##    print_floorplan(*TRACE, @{$solution[1]}) if $debug;
+##    print TRACE "\n" if $debug;
     print TRACE "steps: ", $solution[2] if $debug;
     print TRACE "\n\n" if $debug;
 
@@ -214,7 +218,7 @@ sub main_contra_generator {
 
   print TRACE "Dance number ", $seed - $OFFSET, " (version $version)\n" if $debug;
   print $handle "<P><I>Dance number ", $seed - $OFFSET,
-    " (version $version)</I>\n";
+    " = @{$solution[0]} (version $version)</I>\n";
 }
 
 ###########################################################################################
@@ -247,8 +251,10 @@ sub random_dfs {
   }
 
   @children_order = random_permute($number_of_moves);
+  print TRACE "\@children_order: @children_order\nTry \$child_move: " if $debug;
 
   foreach my $child_move (@children_order) {
+    print TRACE "$child_move, " if $debug;
     if (applicable_to_state($child_move, @search_state)) {
       @temp = apply($child_move, @search_state);
       random_dfs(@temp);
@@ -256,7 +262,7 @@ sub random_dfs {
     if (@solution) {return @solution;}
     elsif ($search_step_flag eq "TOODEEP") {return 0}
   }
-
+  print TRACE "\nReturning from random_dfs()\n" if $debug;
 }
 
 # Test_for_valid_dance
@@ -282,8 +288,8 @@ sub solution_p {
     foreach my $i (0 .. 1) {
       if ( (${$search_state[1]}[0][$i]{direction} != 2)
         or (${$search_state[1]}[1][$i]{direction} != 1)
-        or (${$search_state[1]}[$i][$i]{gender} ne "gent")
-        or (${$search_state[1]}[1 - $i][$i]{gender} ne "lady"))
+        or (${$search_state[1]}[$i][$i]{gender} ne "M")
+        or (${$search_state[1]}[1 - $i][$i]{gender} ne "W"))
       {
         return 0;
       }
@@ -306,19 +312,20 @@ sub applicable_to_state {
   # We may want to relax this condition later:
   # *** Index via move: some moves can't repeat immediately,
   #                     some can't occur twice in one dance, etc.
-  foreach my$old_move (@previous_moves) {
+  foreach my $old_move (@previous_moves) {
     if ($old_move == $move_number) {return 0}
   }
 
-  foreach my$prec (@{$possible_moves[$move_number][0]}) {
+  foreach my $prec (@{$possible_moves[$move_number][0]}) {
 
-    # print TRACE "for $prec : ", &{$prec}(@{$search_state[1]}), "\n" if $debug;
+##    print TRACE "for $prec\n" if $debug;
     if (!&{$prec}(@{$search_state[1]})) {return 0;}
   }
 
-  print TRACE "Start cnt: $search_state[2]  End cnt: " if $debug;
+  print TRACE "\nStart cnt: $search_state[2] End cnt: " if $debug;
   print TRACE ($search_state[2] + $possible_moves[$move_number][2]) if $debug;
-  print TRACE " Boundary: ", (16 * (1 + int($search_state[2] / 16))), "\n" if $debug;
+  print TRACE " Boundary: ", (16 * (1 + int($search_state[2] / 16))) if $debug;
+  print TRACE " move $move_number $possible_moves[$move_number][4]\n" if $debug;
 
   # This tests for crossing A/B boundary (and max size, as a side effect!)
   if (($search_state[2] + $possible_moves[$move_number][2]) <=
@@ -337,7 +344,8 @@ sub apply {
 
   print TRACE " " x ($search_state[2] / 4) if $debug;
   print TRACE
-    "applying move $move_number $possible_moves[$move_number][4] to state @{$search_state[0]} " if $debug;
+    "applying move $move_number $possible_moves[$move_number][4] to state\n" if $debug;
+##    "applying move $move_number $possible_moves[$move_number][4] to state @{$search_state[0]} " if $debug;
   print_floorplan(*TRACE, @{$search_state[1]}) if $debug;
 ## print TRACE "Before action floorplancopy: ", \@floorplancopy, "\n" if $debug;
 ## print_floorplan(TRACE, @floorplancopy) if $debug;
@@ -355,6 +363,7 @@ sub apply {
 
   @newfloorplan = &{$possible_moves[$move_number][1]}(@{$search_state[1]});
   push(@dancecopy, ($move_number));
+  print TRACE "new dance seq @dancecopy\n" if $debug;
 
   return (\@dancecopy, \@newfloorplan,
     $search_state[2] + $possible_moves[$move_number][2]);
@@ -430,10 +439,10 @@ sub random_permute_0 {
 sub couples_on_side {
   my @floorplan = @_;
 
-        ($floorplan[1][1]{gender} eq "gent")
-    and ($floorplan[0][1]{gender} eq "lady")
-    and ($floorplan[1][0]{gender} eq "lady")
-    and ($floorplan[0][0]{gender} eq "gent")
+        ($floorplan[1][1]{gender} eq "M")
+    and ($floorplan[0][1]{gender} eq "W")
+    and ($floorplan[1][0]{gender} eq "W")
+    and ($floorplan[0][0]{gender} eq "M")
 
 }
 
@@ -521,7 +530,7 @@ sub change_sides_to_facing_in {
   my @newfloorplan;
 
   foreach my $i (0 .. 1) {
-    if ($floorplan[$i][$i]{gender} eq "lady") {
+    if ($floorplan[$i][$i]{gender} eq "W") {
       $newfloorplan[0][$i] = $floorplan[1][$i];
       $newfloorplan[1][$i] = $floorplan[0][$i];
     } else {
@@ -554,12 +563,12 @@ sub exchange_men_across_set {
 
   # Find man in column 0
   foreach my $i (0 .. 1) {
-    if ($floorplan[$i][0]{gender} eq "gent") {$man0row = $i}
+    if ($floorplan[$i][0]{gender} eq "M") {$man0row = $i}
   }
 
   # Find man in column 1
   foreach my $i (0 .. 1) {
-    if ($floorplan[$i][1]{gender} eq "gent") {$man1row = $i}
+    if ($floorplan[$i][1]{gender} eq "M") {$man1row = $i}
   }
 
   # Swap men

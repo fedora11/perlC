@@ -3,6 +3,11 @@
 package main;
 use warnings;
 use strict;
+
+# *** Update this with each "release" on the Web:
+# First Release Begun: 30-Dec-98
+use version; our $VERSION = qv("v0.2.2");
+
 ## These are being accessed globally
 ## A better solution would be to pass them as part of an Object
 use vars qw($debug $OFFSET @solution $search_step_cnt);
@@ -25,10 +30,6 @@ use vars qw($debug $OFFSET @solution $search_step_cnt);
 ##  You should have received a copy of the GNU General Public License
 ##  along with Contra Dance Generator.
 ##  If not, see <http://www.gnu.org/licenses/>.
-
-# *** Update this with each "release" on the Web:
-# First Release Begun: 30-Dec-98
-our $version = "0.2";
 
 # Starts with a database of moves, and produces working contra dances
 # (though not necessarily artistically pleasant ones).
@@ -92,7 +93,7 @@ sub print_out_moves {
 
   # *** Would be prettier if a "(" prevented the step count from printing:
   print $handle
-    "There are $number_of_moves contra dance moves defined in version $version:<P>\n\n";
+    "There are $number_of_moves contra dance moves defined in version $VERSION:<P>\n\n";
   foreach my $move (@possible_moves) {
     print $handle "${$move}[3] (${$move}[2] steps)<BR>\n";
   }
@@ -195,7 +196,7 @@ sub main_contra_generator {
   # print_dance_w_floorplans(*DATA, (7,0,1,3,4,5,6)); print DATA "\n";
 
   # This is here in case things really die later:
-  print TRACE "Dance number ", $seed - $OFFSET, " (version $version)\n" if $debug;
+  print TRACE "Dance number ", $seed - $OFFSET, " (version $VERSION)\n" if $debug;
 
   random_dfs(@initial_state);
 
@@ -216,9 +217,13 @@ sub main_contra_generator {
     print $handle "\n<BR>";
   }
 
-  print TRACE "Dance number ", $seed - $OFFSET, " (version $version)\n" if $debug;
+  print TRACE "Dance number ", $seed - $OFFSET, 
+    " = @{$solution[0]} (version $VERSION)\n" if $debug;
   print $handle "<P><I>Dance number ", $seed - $OFFSET,
-    " = @{$solution[0]} (version $version)</I>\n";
+    " = @{$solution[0]} (version $VERSION)</I>\n";
+
+## This makes this routine re-entrant.
+  undef  @solution;
 }
 
 ###########################################################################################

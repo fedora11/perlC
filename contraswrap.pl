@@ -11,6 +11,7 @@ use Data::Dumper qw(Dumper);
 our $debug;
 #our $OFFSET = 910200000;
 our $OFFSET = 915200000;
+our $fh2;
 my $version = 0;
 # This value prevents false error if --debug is not set
 my $tr_log_opn = 1;
@@ -29,6 +30,7 @@ GetOptions(
 ) or die "Usage: $0 --dance \"move-1,move-2,...move-n\" --debug --generate dance-number --moves --version number\n";
 
 open(my $fh1, q{>}, "contra_$generate.txt");
+open($fh2, q{>>}, "dances.txt");
 # Only open the trace log if $debug set
 $tr_log_opn = open(TRACE, q{>}, "contra_$generate.log") if $debug;
 # If open fails for trace log, then don't try to write to it; turn debug off
@@ -69,3 +71,4 @@ if ($moves) {
 
 print "$main::VERSION done\n";
 close($fh1);
+close($fh2);

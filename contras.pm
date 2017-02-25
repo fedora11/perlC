@@ -10,7 +10,7 @@ use version; our $VERSION = qv("v0.2.2");
 
 ## These are being accessed globally
 ## A better solution would be to pass them as part of an Object
-use vars qw($debug $OFFSET @solution $search_step_cnt);
+use vars qw($debug $OFFSET $fh2 @solution $search_step_cnt);
 # Random Contra Dance Generator
 # Copyright (c) 1998, 1999 Robert E. Frederking
 # Copyright (c) 2017 William C. Fay
@@ -89,7 +89,7 @@ for (my $i = 0 ; $i < $number_of_moves ; $i++) {
 # Have a parameter that makes it print out list of available moves!
 # This prints each move, and the number of steps it takes:
 sub print_out_moves {
-  my $handle = pop @_;
+  my ($handle) = @_;
 
   # *** Would be prettier if a "(" prevented the step count from printing:
   print $handle
@@ -219,6 +219,8 @@ sub main_contra_generator {
 
   print TRACE "Dance number ", $seed - $OFFSET, 
     " = @{$solution[0]} (version $VERSION)\n" if $debug;
+  print $fh2 "Dance number ", $seed - $OFFSET, 
+    " = @{$solution[0]} (version $VERSION)\n";
   print $handle "<P><I>Dance number ", $seed - $OFFSET,
     " = @{$solution[0]} (version $VERSION)</I>\n";
 
@@ -236,7 +238,7 @@ sub fake_random_permute {
 
 # Recursive random DFS function!
 sub random_dfs {
-  my @search_state = @_;
+  my (@search_state) = @_;
   my (@children_order, @temp);
 
   # This prevents infinite searches
@@ -287,7 +289,7 @@ sub dance_valid {
 
 # This will be a test for 64 steps and correct progression:
 sub solution_p {
-  my @search_state = @_;
+  my (@search_state) = @_;
 
   if ($search_state[2] == 64) {
     foreach my $i (0 .. 1) {
@@ -379,7 +381,7 @@ sub apply {
 # Uses P dist of moves to affect P of picking a move (ADDED 12-27-98 -- ref)
 # Since first move chosen is last tried, large P of being chosen == low priority!!
 sub random_permute {
-  my $n = pop @_;
+  my ($n) = @_;
   my (@permutation, @indices, @temp, $choice, $X);
   my ($tsum, $psum) = ($total_P_sum, 0);
 
@@ -421,7 +423,7 @@ sub random_permute {
 #  so that for each n from N down to 1 you can take a uniform distribution on @indices.
 # (OBSOLETE: replaced by above)
 sub random_permute_0 {
-  my $n = pop @_;
+  my ($n) = @_;
   my (@permutation, @indices, @temp, $choice);
 
   for (my $i = $n - 1 ; $i >= 0 ; $i--) {
@@ -442,7 +444,7 @@ sub random_permute_0 {
 # We need to test both couples!
 # This tests that the pairs of people on the side are normal couples (facing in)
 sub couples_on_side {
-  my @floorplan = @_;
+  my (@floorplan) = @_;
 
         ($floorplan[1][1]{gender} eq "M")
     and ($floorplan[0][1]{gender} eq "W")
@@ -454,19 +456,20 @@ sub couples_on_side {
 # This tests that the men are across the set from each other
 # This may have to get more complicated later
 sub men_across_set {
-  my @floorplan = @_;
+  my (@floorplan) = @_;
 
   if   ($floorplan[0][0]{gender} eq $floorplan[1][0]{gender}) {return 0}
   else                                                        {return 1}
 }
 
 sub with_P {
-  &with_P_on_side or &with_P_at_heads;
+  my (@floorplan) = @_;
+  with_P_on_side(@floorplan) or with_P_at_heads(@floorplan);
 }
 
 # This tests that you and your partner are together on the side
 sub with_P_on_side {
-  my @floorplan = @_;
+  my (@floorplan) = @_;
 
         ($floorplan[0][0]{direction} eq $floorplan[1][0]{direction})
     and ($floorplan[0][1]{direction} eq $floorplan[1][1]{direction})
@@ -478,7 +481,7 @@ sub with_P_on_side {
 
 # This tests that you and your partner are together at the heads
 sub with_P_at_heads {
-  my @floorplan = @_;
+  my (@floorplan) = @_;
 
         ($floorplan[0][0]{direction} eq $floorplan[0][1]{direction})
     and ($floorplan[1][0]{direction} eq $floorplan[1][1]{direction})
@@ -489,12 +492,13 @@ sub with_P_at_heads {
 }
 
 sub with_N {
-  &with_N_on_side or &with_N_at_heads;
+  my (@floorplan) = @_;
+  with_N_on_side(@floorplan) or with_N_at_heads(@floorplan);
 }
 
 # This tests that you and your (opposite sex) neighbor are together on the side
 sub with_N_on_side {
-  my @floorplan = @_;
+  my (@floorplan) = @_;
 
         ($floorplan[0][0]{direction} ne $floorplan[1][0]{direction})
     and ($floorplan[0][1]{direction} ne $floorplan[1][1]{direction})
@@ -506,7 +510,7 @@ sub with_N_on_side {
 
 # This tests that you and your (opposite sex) neighbor are together at the heads
 sub with_N_at_heads {
-  my @floorplan = @_;
+  my (@floorplan) = @_;
 
         ($floorplan[0][0]{direction} ne $floorplan[0][1]{direction})
     and ($floorplan[1][0]{direction} ne $floorplan[1][1]{direction})
@@ -520,7 +524,7 @@ sub with_N_at_heads {
 # Here start the actions used in the dance move rules!!
 # Do nothing
 sub status_quo {
-  my @floorplan = @_;
+  my (@floorplan) = @_;
 
   return @floorplan;
 }
@@ -531,7 +535,7 @@ sub status_quo {
 # only two possible states: man above (swap man and woman) or man below (do nothing)
 # 	but each side might be different!!
 sub change_sides_to_facing_in {
-  my @floorplan = @_;
+  my (@floorplan) = @_;
   my @newfloorplan;
 
   foreach my $i (0 .. 1) {
@@ -549,7 +553,7 @@ sub change_sides_to_facing_in {
 
 # Circle Left three places
 sub rotate_R_1_place {
-  my @floorplan = @_;
+  my (@floorplan) = @_;
   my @newfloorplan;
 
   $newfloorplan[1][0] = $floorplan[0][0];
@@ -562,7 +566,7 @@ sub rotate_R_1_place {
 
 # Men trade places (they started on opposite sides)
 sub exchange_men_across_set {
-  my @floorplan = @_;
+  my (@floorplan) = @_;
   my @newfloorplan;
   my ($man0row, $man1row);
 
@@ -590,7 +594,7 @@ sub exchange_men_across_set {
 # Partners trade places (they started together)
 # Ps are either at heads or sides
 sub exchange_Ps {
-  my @floorplan = @_;
+  my (@floorplan) = @_;
   my @newfloorplan;
 
   if ($floorplan[0][0]{direction} == $floorplan[0][1]{direction}) {
@@ -614,7 +618,7 @@ sub exchange_Ps {
 
 # Neighbors trade places (they started together)
 sub exchange_Ns {
-  my @floorplan = @_;
+  my (@floorplan) = @_;
   my @newfloorplan;
 
   if ($floorplan[0][0]{direction} != $floorplan[0][1]{direction}) {
@@ -638,7 +642,7 @@ sub exchange_Ns {
 
 # As in CA Twirl (if we start tracking face direction, it changes)
 sub switch_places_at_heads {
-  my @floorplan = @_;
+  my (@floorplan) = @_;
   my @newfloorplan;
 
   foreach my $i (0 .. 1) {

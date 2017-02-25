@@ -12,6 +12,7 @@ our $debug;
 #our $OFFSET = 910200000;
 our $OFFSET = 915200000;
 our $fh2;
+our $fh3;
 my $version = 0;
 # This value prevents false error if --debug is not set
 my $tr_log_opn = 1;
@@ -32,7 +33,7 @@ GetOptions(
 open(my $fh1, q{>}, "contra_$generate.txt");
 open($fh2, q{>>}, "dances.txt");
 # Only open the trace log if $debug set
-$tr_log_opn = open(TRACE, q{>}, "contra_$generate.log") if $debug;
+$tr_log_opn = open($fh3, q{>}, "contra_$generate.log") if $debug;
 # If open fails for trace log, then don't try to write to it; turn debug off
 if (!$tr_log_opn) {
   $debug = 0 ;
@@ -72,3 +73,4 @@ if ($moves) {
 print "$main::VERSION done\n";
 close($fh1);
 close($fh2);
+close($fh3);

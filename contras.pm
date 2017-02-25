@@ -10,7 +10,7 @@ use version; our $VERSION = qv("v0.2.2");
 
 ## These are being accessed globally
 ## A better solution would be to pass them as part of an Object
-use vars qw($debug $OFFSET $fh2 @solution $search_step_cnt);
+use vars qw($debug $OFFSET $fh2 $fh3 @solution $search_step_cnt);
 # Random Contra Dance Generator
 # Copyright (c) 1998, 1999 Robert E. Frederking
 # Copyright (c) 2017 William C. Fay
@@ -156,8 +156,8 @@ sub print_dance_w_floorplans {
   my @floorplan = @initial_floorplan;
 
 ## This prints initial floorplan
-  print_floorplan(*TRACE, @initial_floorplan) if $debug;
-  print TRACE "\n" if $debug;
+  print_floorplan($fh3, @initial_floorplan) if $debug;
+  print $fh3 "\n" if $debug;
 
   print $handle "A1: ";
   foreach my $i (@dance) {
@@ -186,8 +186,8 @@ sub main_contra_generator {
   $search_step_cnt = 0;
 
 ## This prints initial floorplan
-##  print_floorplan(*TRACE, @initial_floorplan) if $debug;
-##  print TRACE "\n" if $debug;
+##  print_floorplan($fh3, @initial_floorplan) if $debug;
+##  print $fh3 "\n" if $debug;
 
   srand($seed);
 
@@ -196,28 +196,28 @@ sub main_contra_generator {
   # print_dance_w_floorplans(*DATA, (7,0,1,3,4,5,6)); print DATA "\n";
 
   # This is here in case things really die later:
-  print TRACE "Dance number ", $seed - $OFFSET, " (version $VERSION)\n" if $debug;
+  print $fh3 "Dance number ", $seed - $OFFSET, " (version $VERSION)\n" if $debug;
 
   random_dfs(@initial_state);
 
   if ($search_step_flag eq "TOODEEP") {
-    print TRACE "Dance search exceeded limit, ", $search_step_limit,
+    print $fh3 "Dance search exceeded limit, ", $search_step_limit,
       " search steps!\n\n" if $debug;
     print $handle "Dance search exceeded limit, ", $search_step_limit,
       " search steps!\n<BR>\n";
   } else {
-    print_dance_w_floorplans(*TRACE, @{$solution[0]}) if $debug;
-    print TRACE "\n" if $debug;
-##    print_floorplan(*TRACE, @{$solution[1]}) if $debug;
-##    print TRACE "\n" if $debug;
-    print TRACE "steps: ", $solution[2] if $debug;
-    print TRACE "\n\n" if $debug;
+    print_dance_w_floorplans($fh3, @{$solution[0]}) if $debug;
+    print $fh3 "\n" if $debug;
+##    print_floorplan($fh3, @{$solution[1]}) if $debug;
+##    print $fh3 "\n" if $debug;
+    print $fh3 "steps: ", $solution[2] if $debug;
+    print $fh3 "\n\n" if $debug;
 
     print_dance($handle, @{$solution[0]});
     print $handle "\n<BR>";
   }
 
-  print TRACE "Dance number ", $seed - $OFFSET, 
+  print $fh3 "Dance number ", $seed - $OFFSET, 
     " = @{$solution[0]} (version $VERSION)\n" if $debug;
   print $fh2 "Dance number ", $seed - $OFFSET, 
     " = @{$solution[0]} (version $VERSION)\n";
@@ -247,7 +247,7 @@ sub random_dfs {
     $search_step_flag = "TOODEEP";
     return 0;
   }
-  print TRACE "\nSearch step count: $search_step_cnt \n" if $debug;
+  print $fh3 "\nSearch step count: $search_step_cnt \n" if $debug;
 
   if (solution_p(@search_state)) {
     @solution = @search_state;
@@ -258,10 +258,10 @@ sub random_dfs {
   }
 
   @children_order = random_permute($number_of_moves);
-  print TRACE "\@children_order: @children_order\nTry \$child_move: " if $debug;
+  print $fh3 "\@children_order: @children_order\nTry \$child_move: " if $debug;
 
   foreach my $child_move (@children_order) {
-    print TRACE "$child_move, " if $debug;
+    print $fh3 "$child_move, " if $debug;
     if (applicable_to_state($child_move, @search_state)) {
       @temp = apply($child_move, @search_state);
       random_dfs(@temp);
@@ -269,7 +269,7 @@ sub random_dfs {
     if (@solution) {return @solution;}
     elsif ($search_step_flag eq "TOODEEP") {return 0}
   }
-  print TRACE "\nReturning from random_dfs()\n" if $debug;
+  print $fh3 "\nReturning from random_dfs()\n" if $debug;
 }
 
 # Test_for_valid_dance
@@ -325,14 +325,14 @@ sub applicable_to_state {
 
   foreach my $prec (@{$possible_moves[$move_number][0]}) {
 
-##    print TRACE "for $prec\n" if $debug;
+##    print $fh3 "for $prec\n" if $debug;
     if (!&{$prec}(@{$search_state[1]})) {return 0;}
   }
 
-  print TRACE "\nStart cnt: $search_state[2] End cnt: " if $debug;
-  print TRACE ($search_state[2] + $possible_moves[$move_number][2]) if $debug;
-  print TRACE " Boundary: ", (16 * (1 + int($search_state[2] / 16))) if $debug;
-  print TRACE " move $move_number $possible_moves[$move_number][4]\n" if $debug;
+  print $fh3 "\nStart cnt: $search_state[2] End cnt: " if $debug;
+  print $fh3 ($search_state[2] + $possible_moves[$move_number][2]) if $debug;
+  print $fh3 " Boundary: ", (16 * (1 + int($search_state[2] / 16))) if $debug;
+  print $fh3 " move $move_number $possible_moves[$move_number][4]\n" if $debug;
 
   # This tests for crossing A/B boundary (and max size, as a side effect!)
   if (($search_state[2] + $possible_moves[$move_number][2]) <=
@@ -349,16 +349,16 @@ sub apply {
   my ($move_number, @search_state) = @_;
   my (@dancecopy, @newfloorplan);
 
-  print TRACE " " x ($search_state[2] / 4) if $debug;
-  print TRACE
+  print $fh3 " " x ($search_state[2] / 4) if $debug;
+  print $fh3
     "applying move $move_number $possible_moves[$move_number][4] to state\n" if $debug;
 ##    "applying move $move_number $possible_moves[$move_number][4] to state @{$search_state[0]} " if $debug;
-  print_floorplan(*TRACE, @{$search_state[1]}) if $debug;
-## print TRACE "Before action floorplancopy: ", \@floorplancopy, "\n" if $debug;
-## print_floorplan(TRACE, @floorplancopy) if $debug;
-## print TRACE "Before action search_state: ", \@{$search_state[1]}, "\n" if $debug;
-## print_floorplan(TRACE, @{$search_state[1]}) if $debug;
-## print TRACE "\n" if $debug;
+  print_floorplan($fh3, @{$search_state[1]}) if $debug;
+## print $fh3 "Before action floorplancopy: ", \@floorplancopy, "\n" if $debug;
+## print_floorplan($fh3, @floorplancopy) if $debug;
+## print $fh3 "Before action search_state: ", \@{$search_state[1]}, "\n" if $debug;
+## print_floorplan($fh3, @{$search_state[1]}) if $debug;
+## print $fh3 "\n" if $debug;
 
 ## Need to copy the array (or something) due to destructive ops!!!
   @dancecopy = @{$search_state[0]};
@@ -370,7 +370,7 @@ sub apply {
 
   @newfloorplan = &{$possible_moves[$move_number][1]}(@{$search_state[1]});
   push(@dancecopy, ($move_number));
-  print TRACE "new dance seq @dancecopy\n" if $debug;
+  print $fh3 "new dance seq @dancecopy\n" if $debug;
 
   return (\@dancecopy, \@newfloorplan,
     $search_state[2] + $possible_moves[$move_number][2]);
@@ -391,22 +391,22 @@ sub random_permute {
 
   for (my $i = $n - 1 ; $i >= 0 ; $i--) {
 
-##  print TRACE "tsum is $tsum \n" if $debug;
+##  print $fh3 "tsum is $tsum \n" if $debug;
     $X    = rand;
     $psum = 0;
 
-##  print TRACE "i is $i  and  X is $X \n" if $debug;
+##  print $fh3 "i is $i  and  X is $X \n" if $debug;
   CHOOSE:
     for (my $j = 0 ; $j <= $i ; $j++) {
 
       # Calculate $psum in same loop as $X comparison:
       $psum += $possible_moves[$indices[$j]][5] / $tsum;
 
-      #print TRACE "j is $j  and  psum is $psum \n" if $debug;
+      #print $fh3 "j is $j  and  psum is $psum \n" if $debug;
       if ($X < $psum) {$choice = $j; last CHOOSE}
     }
 
-##  print TRACE "choice is $choice \n" if $debug;
+##  print $fh3 "choice is $choice \n" if $debug;
 
     @temp = splice(@indices, $choice, 1);
     $permutation[$i] = $temp[0];

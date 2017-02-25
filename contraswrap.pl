@@ -17,12 +17,16 @@ my $tr_log_opn = 1;
 my $generate = 0;
 my $seed = time;
 my $list = "";
+my $moves;
+my $count = 1;
 GetOptions(
     'generate=i' => \$generate,
+    'count=i' => \$count,
     'version=i' => \$version,
     'dance=s' => \$list,
     'debug' => \$debug,
-) or die "Usage: $0 --debug --generate dance-number --dance \"move-1,move-2,...move-n\" --version number\n";
+    'moves' => \$moves,
+) or die "Usage: $0 --dance \"move-1,move-2,...move-n\" --debug --generate dance-number --moves --version number\n";
 
 open(my $fh1, q{>}, "contra_$generate.txt");
 # Only open the trace log if $debug set
@@ -33,9 +37,11 @@ if (!$tr_log_opn) {
   print "Failed to open Trace Log. Continuing anyway.\n";
 }
 
+if ($moves) {
+  print_out_moves($fh1);
 # If you supply a specific dance, we don't bother to generate one.
 # If you generate with a specific value, the same dance is generated every time this is run.
-if ($list) {
+} elsif ($list) {
 ##If not comma separated list, try just spaces
   my @dance = split(',',$list);
   my $move_ct = scalar @dance;
@@ -53,7 +59,10 @@ if ($list) {
   }
 } elsif ($generate) {
   $seed = $generate + $OFFSET;
-  main_contra_generator($fh1, $seed);
+  for (my $repeats = 0; $repeats < $count; $repeats++) {
+    main_contra_generator($fh1, $seed);
+    $seed++;
+  }
 } else {
   main_contra_generator($fh1, $seed);
 }

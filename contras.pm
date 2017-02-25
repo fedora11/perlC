@@ -53,40 +53,62 @@ my $search_step_flag = "";
 #	Currently, 1=very common, 2=not unusual, 10=as unusual as possible
 #<<< Tells PerlTidy to skip this section
 my @possible_moves = (
-  [\&couples_on_side, \&status_quo, 16, "Hey for Four", "Hey", 2],
+  ["couples_on_side", "status_quo", 16, "Hey for Four", "Hey", 2],
 # This pretends we stay in normal improper contra position:
-  [\&couples_on_side, \&status_quo, 16, "Down the Hall in Lines of Four and<BR> 
+  ["couples_on_side", "status_quo", 16, "Down the Hall in Lines of Four and<BR> 
     Turn as a Couple and Come Back to Place", "DHL4/turn_couple", 2],
-  [\&men_across_set, \&exchange_men_across_set, 4, "Men pass Left across set", "Men_cross", 10],
-  [\&with_P_on_side, \&change_sides_to_facing_in, 8, "Swing your Partner", "Swing_P/in", 1],
+  ["men_across_set", "exchange_men_across_set", 4, "Men pass Left across set", "Men_cross", 10],
+  ["with_P_on_side", "change_sides_to_facing_in", 8, "Swing your Partner", "Swing_P/in", 1],
 # end facing in?
-  [\&with_P_on_side, \&change_sides_to_facing_in, 12, "Swing your Partner (12 counts)",
+  ["with_P_on_side", "change_sides_to_facing_in", 12, "Swing your Partner (12 counts)",
     "Swing_P/in/12", 2],
 # end facing in?
-  [\&with_P_on_side, \&change_sides_to_facing_in, 16, "Balance and Swing Partner", "B+S_P/in", 1],
+  ["with_P_on_side", "change_sides_to_facing_in", 16, "Balance and Swing Partner", "B+S_P/in", 1],
 # end facing in?
-  [\&applies_to_any, \&rotate_R_1_place, 8, "Circle Left three places", "Circle_L_3", 1],
-  [\&applies_to_any, \&status_quo, 4, "Balance the circle", "Bal_circle", 5],
-  [\&with_P, \&exchange_Ps, 4, "Box the Gnat with your Partner", "Box_Gnat_P", 10],
-  [\&with_N, \&exchange_Ns, 4, "Box the Gnat with your Neighbor", "Box_Gnat_N", 10],
-  [\&with_P, \&exchange_Ps, 8, "Balance and Box the Gnat with your Partner", "B+Box_Gnat_P", 10],
-  [\&with_N, \&exchange_Ns, 8, "Balance and Box the Gnat with your Neighbor", "B+Box_Gnat_N", 10],
-  [\&with_P_at_heads, \&switch_places_at_heads, 4, "California Twirl Partner", "CA_twirl", 5],
-  [\&with_N_on_side, \&change_sides_to_facing_in, 8, "Swing your Neighbor", "Swing_N/in", 1],
+  ["applies_to_any", "rotate_R_1_place", 8, "Circle Left three places", "Circle_L_3", 1],
+  ["applies_to_any", "status_quo", 4, "Balance the circle", "Bal_circle", 5],
+  ["with_P", "exchange_Ps", 4, "Box the Gnat with your Partner", "Box_Gnat_P", 10],
+  ["with_N", "exchange_Ns", 4, "Box the Gnat with your Neighbor", "Box_Gnat_N", 10],
+  ["with_P", "exchange_Ps", 8, "Balance and Box the Gnat with your Partner", "B+Box_Gnat_P", 10],
+  ["with_N", "exchange_Ns", 8, "Balance and Box the Gnat with your Neighbor", "B+Box_Gnat_N", 10],
+  ["with_P_at_heads", "switch_places_at_heads", 4, "California Twirl Partner", "CA_twirl", 5],
+  ["with_N_on_side", "change_sides_to_facing_in", 8, "Swing your Neighbor", "Swing_N/in", 1],
 # end facing in?
-  [\&with_N_on_side, \&change_sides_to_facing_in, 12, "Swing your Neighbor (12 counts)",
+  ["with_N_on_side", "change_sides_to_facing_in", 12, "Swing your Neighbor (12 counts)",
     "Swing_N/in/12", 2],
 # end facing in?
-  [\&with_N_on_side, \&change_sides_to_facing_in, 16, "Balance and Swing Neighbor", "B+S_N/in", 1],
+  ["with_N_on_side", "change_sides_to_facing_in", 16, "Balance and Swing Neighbor", "B+S_N/in", 1],
 # end facing in?
-  [\&with_P, \&status_quo, 8, "Do-si-do your Partner", "Dosido_P", 5],
-  [\&with_N, \&status_quo, 8, "Do-si-do your Neighbor", "Dosido_N", 5],
-  [\&applies_to_any, \&status_quo, 8, "Men Do-si-do", "Dosido_M", 10],
-  [\&applies_to_any, \&status_quo, 8, "Women Do-si-do", "Dosido_W", 10],
+  ["with_P", "status_quo", 8, "Do-si-do your Partner", "Dosido_P", 5],
+  ["with_N", "status_quo", 8, "Do-si-do your Neighbor", "Dosido_N", 5],
+  ["applies_to_any", "status_quo", 8, "Men Do-si-do", "Dosido_M", 10],
+  ["applies_to_any", "status_quo", 8, "Women Do-si-do", "Dosido_W", 10],
 );
 #>>>
 # This gets us the size of the move array:
 my $number_of_moves = @possible_moves;
+
+our $dt_required ||= {
+  couples_on_side => \&couples_on_side,
+  men_across_set  => \&men_across_set,
+  with_P_on_side  => \&with_P_on_side,
+  applies_to_any  => \&applies_to_any,
+  with_P          => \&with_P,
+  with_N          => \&with_N,
+  with_P_at_heads => \&with_P_at_heads,
+  with_N_at_heads => \&with_N_at_heads,
+  with_N_on_side  => \&with_N_on_side,
+};
+
+our $dt_transform ||= {
+  status_quo                => \&status_quo,
+  exchange_men_across_set   => \&exchange_men_across_set,
+  change_sides_to_facing_in => \&change_sides_to_facing_in,
+  rotate_R_1_place          => \&rotate_R_1_place,
+  exchange_Ps               => \&exchange_Ps,
+  exchange_Ns               => \&exchange_Ns,
+  switch_places_at_heads    => \&switch_places_at_heads,
+};
 
 # Compute total "P" mass across all possible moves:
 my $total_P_sum = 0;
@@ -176,7 +198,8 @@ sub print_dance_w_floorplans {
 
     print $handle $possible_moves[$i][3], "\n";
 
-    @floorplan = &{$possible_moves[$i][1]}(@floorplan);
+##    @floorplan = &{$possible_moves[$i][1]}(@floorplan);
+    @floorplan = $dt_transform->{$possible_moves[$i][1]}(@floorplan);
     print_floorplan($handle, @floorplan);
 
     $move_cntr = $move_cntr + $possible_moves[$i][2];
@@ -332,10 +355,15 @@ sub applicable_to_state {
   }
 
 ##  foreach my $prec (@{$possible_moves[$move_number][0]}) {
-    my $prec = $possible_moves[$move_number][0];
+##    my $prec = $possible_moves[$move_number][0];
+##    $dispatch_table->{$action}->(@args);
+##    $dt_required->{$possible_moves[$move_number][0]}->(@{$search_state[1]})
 ##    print $fh3 "for $prec\n" if $debug;
-    if (!&{$prec}(@{$search_state[1]})) {return 0;}
+##    if (!&{$prec}(@{$search_state[1]})) {return 0;}
 ##  }
+  if (!$dt_required->{$possible_moves[$move_number][0]}->(@{$search_state[1]})) {
+    return 0;
+  }
 
   print $fh3 "\nStart cnt: $search_state[2] End cnt: " if $debug;
   print $fh3 ($search_state[2] + $possible_moves[$move_number][2]) if $debug;
@@ -376,7 +404,10 @@ sub apply {
 ## 	$floorplancopy[1][0] = ${$search_state[1]}[1][0];
 ## 	$floorplancopy[1][1] = ${$search_state[1]}[1][1];
 
-  @newfloorplan = &{$possible_moves[$move_number][1]}(@{$search_state[1]});
+##  @newfloorplan = &{$possible_moves[$move_number][1]}(@{$search_state[1]});
+##    $dispatch_table->{$action}->(@args);
+##    $dt_required->{$possible_moves[$move_number][0]}->(@{$search_state[1]})
+  @newfloorplan = $dt_transform->{$possible_moves[$move_number][1]}(@{$search_state[1]});
   push(@dancecopy, ($move_number));
   print $fh3 "new dance seq @dancecopy\n" if $debug;
 

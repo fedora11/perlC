@@ -9,8 +9,8 @@ use Getopt::Long qw(GetOptions);
 use Data::Dumper qw(Dumper);
 
 our $debug;
-#our $OFFSET = 910200000;
-our $OFFSET = 915200000;
+our $OFFSET = 910200000;
+#our $OFFSET = 915200000;
 our $fh2;
 our $fh3;
 my $version = 0;

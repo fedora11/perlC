@@ -21,6 +21,7 @@ my $seed = time;
 my $list = "";
 my $moves;
 my $count = 1;
+my $start = time;
 GetOptions(
     'generate=i' => \$generate,
     'count=i' => \$count,
@@ -69,8 +70,8 @@ if ($moves) {
 } else {
   main_contra_generator($fh1, $seed);
 }
-
-print "$main::VERSION done\n";
+my $duration = time - $start;
+print "$main::VERSION done - $duration s\n";
 close($fh1);
 close($fh2);
-close($fh3);
+close($fh3) if $debug;

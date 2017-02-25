@@ -24,7 +24,7 @@ GetOptions(
     'debug' => \$debug,
 ) or die "Usage: $0 --debug --generate dance-number --dance \"move-1,move-2,...move-n\" --version number\n";
 
-open(DATA, q{>}, "contra_$generate.txt");
+open(my $fh1, q{>}, "contra_$generate.txt");
 # Only open the trace log if $debug set
 $tr_log_opn = open(TRACE, q{>}, "contra_$generate.log") if $debug;
 # If open fails for trace log, then don't try to write to it; turn debug off
@@ -45,17 +45,18 @@ if ($list) {
   if (dance_valid(@dance)) {
 ## When passing a Global to a file handle use *DATA or \*DATA
 ## http://stackoverflow.com/questions/16060919/alias-file-handle-to-stdout-in-perl
-    print_dance(*DATA, @dance);
-    print DATA "<P><I>Dance moves ",
+    print_dance($fh1, @dance);
+    print $fh1 "<P><I>Dance moves ",
       " = $list (version $main::VERSION)</I>\n";
   } else {
     print "Dance Invalid. Possibly you have the wrong version of Possible Moves.\n";
   }
 } elsif ($generate) {
   $seed = $generate + $OFFSET;
-  main_contra_generator(*DATA, $seed);
+  main_contra_generator($fh1, $seed);
 } else {
-  main_contra_generator(*DATA, $seed);
+  main_contra_generator($fh1, $seed);
 }
 
 print "$main::VERSION done\n";
+close($fh1);
